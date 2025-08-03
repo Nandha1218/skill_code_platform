@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login System</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        input, button { margin: 5px; padding: 8px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>Login System Test</h1>
+    
+    <div class="test-section">
+        <h3>Test Login with Default Password</h3>
+        <p>Try logging in with: username: <strong>student1</strong>, password: <strong>Rit@123</strong></p>
+        <input type="text" id="testUsername" placeholder="Username" value="student1">
+        <input type="password" id="testPassword" placeholder="Password" value="Rit@123">
+        <button onclick="testLogin()">Test Login</button>
+        <div id="loginResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Change Password</h3>
+        <p>After successful login, you should be redirected to change password form.</p>
+        <div id="changePasswordTest" style="display: none;">
+            <input type="password" id="oldPass" placeholder="Old Password">
+            <input type="password" id="newPass" placeholder="New Password">
+            <input type="password" id="confirmPass" placeholder="Confirm Password">
+            <button onclick="testChangePassword()">Test Change Password</button>
+            <div id="changeResult"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>System Status</h3>
+        <div id="systemStatus"></div>
+    </div>
+
+    <script>
+        let currentUsername = '';
+
+        async function testLogin() {
+            const username = document.getElementById('testUsername').value;
+            const password = document.getElementById('testPassword').value;
+            const resultDiv = document.getElementById('loginResult');
+
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                
+                if (data.mustChangePassword) {
+                    resultDiv.innerHTML = `<span class="info">✓ Login successful! Must change password.</span>`;
+                    currentUsername = data.username || username;
+                    document.getElementById('changePasswordTest').style.display = 'block';
+                    document.getElementById('oldPass').value = password;
+                } else if (data.message === 'Login successful') {
+                    resultDiv.innerHTML = `<span class="success">✓ Login successful!</span>`;
+                } else {
+                    resultDiv.innerHTML = `<span class="error">✗ ${data.message}</span>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">✗ Server error: ${error.message}</span>`;
+            }
+        }
+
+        async function testChangePassword() {
+            const oldPassword = document.getElementById('oldPass').value;
+            const newPassword = document.getElementById('newPass').value;
+            const confirmPassword = document.getElementById('confirmPass').value;
+            const resultDiv = document.getElementById('changeResult');
+
+            if (newPassword !== confirmPassword) {
+                resultDiv.innerHTML = `<span class="error">✗ Passwords do not match</span>`;
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        username: currentUsername, 
+                        oldPassword, 
+                        newPassword 
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.message === 'Password changed successfully') {
+                    resultDiv.innerHTML = `<span class="success">✓ Password changed successfully!</span>`;
+                    // Redirect to dashboard with success parameter
+                    setTimeout(() => {
+                        window.location.href = `http://localhost:5000/dashboard.html?username=${encodeURIComponent(currentUsername)}&success=true`;
+                    }, 2000);
+                } else {
+                    resultDiv.innerHTML = `<span class="error">✗ ${data.message}</span>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">✗ Server error: ${error.message}</span>`;
+            }
+        }
+
+        // Check server status
+        async function checkServerStatus() {
+            const statusDiv = document.getElementById('systemStatus');
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'test', password: 'test' })
+                });
+                statusDiv.innerHTML = `<span class="success">✓ Server is running</span>`;
+            } catch (error) {
+                statusDiv.innerHTML = `<span class="error">✗ Server not responding. Make sure to start the backend server.</span>`;
+            }
+        }
+
+        // Check status on page load
+        checkServerStatus();
+    </script>
+</body>
+</html> 

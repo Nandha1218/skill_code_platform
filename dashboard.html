@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Skill Code Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f2f4f8;
+      color: #333;
+      min-height: 100vh;
+    }
+
+    .dashboard-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .header {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+      margin-bottom: 40px;
+    }
+
+    .header h1 {
+      color: #4f46e5;
+      font-size: 2.4rem;
+    }
+
+    .user-info {
+      text-align: right;
+    }
+
+    .welcome-text {
+      font-size: 1rem;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .logout-btn {
+      background: #ef4444;
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+
+    .logout-btn:hover {
+      background: #dc2626;
+    }
+
+    .success-message {
+      background: #22c55e;
+      color: white;
+      padding: 16px;
+      border-radius: 12px;
+      text-align: center;
+      font-weight: 600;
+      margin-bottom: 30px;
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.06);
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    .card h3 {
+      color: #4f46e5;
+      font-size: 1.3rem;
+      margin-bottom: 12px;
+    }
+
+    .card p {
+      color: #666;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      flex-grow: 1;
+    }
+
+    .action-btn {
+      background: #4f46e5;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: 0.3s ease;
+      align-self: flex-start;
+    }
+
+    .action-btn:hover {
+      background: #4338ca;
+      transform: translateY(-2px);
+    }
+
+    .stats-card {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.06);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .stat-item {
+      background: #f8fafc;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      transition: 0.3s ease;
+      border: 2px solid transparent;
+    }
+
+    .stat-item:hover {
+      background: #e0e7ff;
+    }
+
+    .stat-number {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #4f46e5;
+    }
+
+    .stat-label {
+      font-size: 0.95rem;
+      color: #666;
+      margin-top: 6px;
+    }
+
+    /* Code Examiner Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+    }
+
+    .modal-content {
+      background-color: #1e1e1e;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+      background: #2d2d2d;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #404040;
+    }
+
+    .modal-title {
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .modal-controls {
+      display: flex;
+      gap: 10px;
+    }
+
+    .modal-btn {
+      background: #4f46e5;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: 0.3s ease;
+    }
+
+    .modal-btn:hover {
+      background: #4338ca;
+    }
+
+    .modal-btn.secondary {
+      background: #6b7280;
+    }
+
+    .modal-btn.secondary:hover {
+      background: #4b5563;
+    }
+
+    .modal-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .code-editor-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .CodeMirror {
+      height: 100%;
+      font-size: 14px;
+    }
+
+    .test-panel {
+      background: #2d2d2d;
+      border-top: 1px solid #404040;
+      padding: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .test-panel h3 {
+      color: #fff;
+      margin-bottom: 15px;
+      font-size: 1.1rem;
+    }
+
+    .test-case {
+      background: #3a3a3a;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-left: 4px solid #4f46e5;
+    }
+
+    .test-case h4 {
+      color: #fff;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+    }
+
+    .test-input, .test-output {
+      background: #1e1e1e;
+      color: #e5e7eb;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      margin: 5px 0;
+    }
+
+    .test-result {
+      margin-top: 8px;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .test-result.pass {
+      background: #065f46;
+      color: #d1fae5;
+    }
+
+    .test-result.fail {
+      background: #7f1d1d;
+      color: #fecaca;
+    }
+
+    .run-btn {
+      background: #059669;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: 0.3s ease;
+    }
+
+    .run-btn:hover {
+      background: #047857;
+    }
+
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+      }
+
+      .header h1 {
+        font-size: 2rem;
+      }
+
+      .modal-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+      }
+
+      .modal-controls {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <div class="header">
+      <h1>Skill Code Dashboard</h1>
+      <div class="user-info">
+        <div class="welcome-text">Welcome back!</div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <div id="successMessage" class="success-message" style="display: none;">
+      ✅ Successfully logged in! Your password has been updated securely.
+    </div>
+
+    <div class="content-grid">
+      <div class="card">
+        <h3>📚 Course Progress</h3>
+        <p>Track your learning journey and view your progress across all enrolled courses.</p>
+        <button class="action-btn" onclick="viewCourses()">View Courses</button>
+      </div>
+
+      <div class="card">
+        <h3>🏆 Achievements</h3>
+        <p>Browse your earned badges, certificates, and coding milestones.</p>
+        <button class="action-btn" onclick="viewAchievements()">View Achievements</button>
+      </div>
+
+      <div class="card">
+        <h3>💻 Practice Sessions</h3>
+        <p>Continue practicing with coding exercises, problems, and project tasks.</p>
+        <button class="action-btn" onclick="startPractice()">Start Practice</button>
+      </div>
+
+      <div class="card">
+        <h3>🔍 Code Examiner</h3>
+        <p>Write, test, and debug code with our advanced code editor and test case system.</p>
+        <button class="action-btn" onclick="openCodeExaminer()">Open Code Examiner</button>
+      </div>
+
+      <div class="card">
+        <h3>👥 Community</h3>
+        <p>Join peer groups, forums, and coding challenges with other learners.</p>
+        <button class="action-btn" onclick="joinCommunity()">Join Community</button>
+      </div>
+    </div>
+
+    <div class="stats-card">
+      <h3 style="color:#4f46e5; font-size:1.5rem; margin-bottom:20px;">📊 Your Learning Stats</h3>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-number">12</div>
+          <div class="stat-label">Courses Completed</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">156</div>
+          <div class="stat-label">Hours Coded</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">8</div>
+          <div class="stat-label">Certificates Earned</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">95%</div>
+          <div class="stat-label">Success Rate</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Code Examiner Modal -->
+  <div id="codeExaminerModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🔍 Code Examiner - Full Screen Mode</div>
+        <div class="modal-controls">
+          <button class="modal-btn run-btn" onclick="runCode()">▶ Run Code</button>
+          <button class="modal-btn secondary" onclick="resetCode()">🔄 Reset</button>
+          <button class="modal-btn secondary" onclick="closeCodeExaminer()">✕ Close</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="code-editor-container">
+          <textarea id="codeEditor"></textarea>
+        </div>
+        <div class="test-panel">
+          <h3>🧪 Test Cases</h3>
+          <div id="testCases"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/clike/clike.min.js"></script>
+  <script>
+    let codeEditor;
+    let currentTestCases = [];
+
+    function checkAuth() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const username = urlParams.get('username');
+      const showSuccess = urlParams.get('success');
+      
+      if (!username) {
+        window.location.href = '/';
+        return;
+      }
+
+      // Show success message only if 'success' parameter is present
+      if (showSuccess === 'true') {
+        const successMessage = document.getElementById('successMessage');
+        successMessage.style.display = 'block';
+        
+        // Remove the success parameter from URL after showing the message
+        const newUrl = new URL(window.location);
+        newUrl.searchParams.delete('success');
+        window.history.replaceState({}, '', newUrl);
+        
+        // Auto-hide the message after 5 seconds
+        setTimeout(() => {
+          successMessage.style.display = 'none';
+        }, 5000);
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('user');
+      sessionStorage.clear();
+      window.location.href = '/';
+    }
+
+    function viewCourses() {
+      alert('Course catalog feature coming soon!');
+    }
+
+    function viewAchievements() {
+      alert('Achievements feature coming soon!');
+    }
+
+    function startPractice() {
+      alert('Practice sessions feature coming soon!');
+    }
+
+    function joinCommunity() {
+      alert('Community feature coming soon!');
+    }
+
+    function openCodeExaminer() {
+      const modal = document.getElementById('codeExaminerModal');
+      modal.style.display = 'block';
+      
+      // Initialize CodeMirror if not already done
+      if (!codeEditor) {
+        const textarea = document.getElementById('codeEditor');
+        codeEditor = CodeMirror.fromTextArea(textarea, {
+          mode: 'javascript',
+          theme: 'monokai',
+          lineNumbers: true,
+          autoCloseBrackets: true,
+          matchBrackets: true,
+          indentUnit: 2,
+          tabSize: 2,
+          lineWrapping: true,
+          extraKeys: {
+            "Ctrl-Space": "autocomplete"
+          }
+        });
+        
+        // Set default code
+        setDefaultCode();
+        loadTestCases();
+      }
+      
+      // Refresh editor
+      setTimeout(() => codeEditor.refresh(), 100);
+    }
+
+    function closeCodeExaminer() {
+      const modal = document.getElementById('codeExaminerModal');
+      modal.style.display = 'none';
+    }
+
+    function setDefaultCode() {
+      const defaultCode = `// Welcome to Code Examiner!
+// Write your JavaScript code here
+
+function fibonacci(n) {
+  if (n <= 1) return n;
+  return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+// Test your function
+console.log("Fibonacci of 10:", fibonacci(10));
+
+// You can also write other functions
+function factorial(n) {
+  if (n <= 1) return 1;
+  return n * factorial(n - 1);
+}
+
+console.log("Factorial of 5:", factorial(5));`;
+      
+      codeEditor.setValue(defaultCode);
+    }
+
+    function loadTestCases() {
+      currentTestCases = [
+        {
+          name: "Fibonacci Test 1",
+          input: "fibonacci(5)",
+          expectedOutput: "5",
+          description: "Test fibonacci function with n=5"
+        },
+        {
+          name: "Fibonacci Test 2", 
+          input: "fibonacci(10)",
+          expectedOutput: "55",
+          description: "Test fibonacci function with n=10"
+        },
+        {
+          name: "Factorial Test 1",
+          input: "factorial(5)",
+          expectedOutput: "120",
+          description: "Test factorial function with n=5"
+        },
+        {
+          name: "Factorial Test 2",
+          input: "factorial(0)",
+          expectedOutput: "1",
+          description: "Test factorial function with n=0"
+        }
+      ];
+      
+      displayTestCases();
+    }
+
+    function displayTestCases() {
+      const testCasesContainer = document.getElementById('testCases');
+      testCasesContainer.innerHTML = '';
+      
+      currentTestCases.forEach((testCase, index) => {
+        const testDiv = document.createElement('div');
+        testDiv.className = 'test-case';
+        testDiv.innerHTML = `
+          <h4>${testCase.name}</h4>
+          <div class="test-input"><strong>Input:</strong> ${testCase.input}</div>
+          <div class="test-input"><strong>Expected:</strong> ${testCase.expectedOutput}</div>
+          <div class="test-input"><strong>Description:</strong> ${testCase.description}</div>
+          <div id="result-${index}" class="test-result" style="display: none;"></div>
+        `;
+        testCasesContainer.appendChild(testDiv);
+      });
+    }
+
+    function runCode() {
+      const code = codeEditor.getValue();
+      
+      try {
+        // Create a safe execution environment
+        const originalConsole = console.log;
+        const outputs = [];
+        
+        // Override console.log to capture output
+        console.log = function(...args) {
+          outputs.push(args.join(' '));
+          originalConsole.apply(console, args);
+        };
+        
+        // Execute the code
+        eval(code);
+        
+        // Restore console.log
+        console.log = originalConsole;
+        
+        // Run test cases
+        runTestCases(outputs);
+        
+      } catch (error) {
+        alert('Error in code execution: ' + error.message);
+      }
+    }
+
+    function runTestCases(outputs) {
+      currentTestCases.forEach((testCase, index) => {
+        try {
+          // Try to evaluate the test case
+          const result = eval(testCase.input);
+          const resultDiv = document.getElementById(`result-${index}`);
+          
+          if (result.toString() === testCase.expectedOutput) {
+            resultDiv.className = 'test-result pass';
+            resultDiv.textContent = `✅ PASS: Got ${result}`;
+          } else {
+            resultDiv.className = 'test-result fail';
+            resultDiv.textContent = `❌ FAIL: Expected ${testCase.expectedOutput}, got ${result}`;
+          }
+          
+          resultDiv.style.display = 'block';
+        } catch (error) {
+          const resultDiv = document.getElementById(`result-${index}`);
+          resultDiv.className = 'test-result fail';
+          resultDiv.textContent = `❌ ERROR: ${error.message}`;
+          resultDiv.style.display = 'block';
+        }
+      });
+    }
+
+    function resetCode() {
+      setDefaultCode();
+      // Clear test results
+      currentTestCases.forEach((testCase, index) => {
+        const resultDiv = document.getElementById(`result-${index}`);
+        if (resultDiv) {
+          resultDiv.style.display = 'none';
+        }
+      });
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const modal = document.getElementById('codeExaminerModal');
+      if (event.target === modal) {
+        closeCodeExaminer();
+      }
+    }
+
+    checkAuth();
+  </script>
+</body>
+</html>
