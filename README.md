@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Login System with Password Change Feature
 
 This is a complete login system with automatic password change requirement for users with default passwords.
@@ -193,3 +194,6 @@ The dashboard includes:
 - Community features
 - Learning statistics
 - Logout functionality 
+=======
+# skill_code_platform
+>>>>>>> 028d028d00ab1e282bfef3a3af421dec16882ff0
